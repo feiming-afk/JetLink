@@ -1,12 +1,16 @@
 package com.example.jetlink.socket
 
+import android.content.Context
 import android.util.Log
-import com.example.jetlink.data.repository.ChatRepository
+import com.example.jetlink.model.MessagePayload
 import com.example.jetlink.model.SocketMessage
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.BufferedReader
@@ -15,11 +19,11 @@ import java.io.PrintWriter
 import java.net.Socket
 
 /**
- * 客户端 Socket 管理器
+ * 客户端 Socket 管理器 (V2.0 Updated)
  * 负责连接服务端、发送消息、接收消息并回调
  */
 class SocketClientManager(
-    private val repository: ChatRepository,
+    private val context: Context, // 需要 Context 来保存接收到的图片
     private val currentUserId: String
 ) {
     private var socket: Socket? = null
@@ -27,6 +31,13 @@ class SocketClientManager(
     private val gson = Gson()
     private val scope = CoroutineScope(Dispatchers.IO)
     private var isConnected = false
+
+    // 暴露 TYPING 事件流 (senderId, isTyping)
+    private val _typingFlow = MutableSharedFlow<Pair<String, Boolean>>()
+    val typingFlow: SharedFlow<Pair<String, Boolean>> = _typingFlow.asSharedFlow()
+
+    private val _messageFlow = MutableSharedFlow<SocketMessage>()
+    val messageFlow: SharedFlow<SocketMessage> = _messageFlow.asSharedFlow()
 
     companion object {
         private const val TAG = "SocketClientManager"
@@ -63,8 +74,18 @@ class SocketClientManager(
             val input = BufferedReader(InputStreamReader(socket!!.getInputStream()))
             while (isConnected) {
                 val json = input.readLine() ?: break
-                Log.d(TAG, "Received: $json")
-                handleIncomingMessage(json)
+                
+                val logMsg = if (json.length > 200) json.substring(0, 200) + "..." else json
+                Log.d(TAG, "Received: $logMsg")
+                
+                try {
+                    val socketMessage = gson.fromJson(json, SocketMessage::class.java)
+                    if (socketMessage != null && socketMessage.from != currentUserId) {
+                        _messageFlow.emit(socketMessage)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to parse message", e)
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error listening for messages", e)
@@ -73,41 +94,43 @@ class SocketClientManager(
         }
     }
 
-    private suspend fun handleIncomingMessage(json: String) {
-        try {
-            val socketMessage = gson.fromJson(json, SocketMessage::class.java)
-            if (socketMessage != null && socketMessage.type == "MSG") {
-                // 如果是自己发的消息，通常已经在本地保存了，这里可以选择忽略或更新状态
-                // 但为了简化，如果是自己发的，我们已经在 sendMessage 时保存了，这里只处理别人的消息
-                if (socketMessage.from != currentUserId) {
-                    repository.saveReceivedMessage(
-                        senderId = socketMessage.from,
-                        content = socketMessage.content
-                    )
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to parse message", e)
+    suspend fun sendMessage(to: String?, contentType: String, content: String, replyId: Long? = null) {
+        if (!isConnected || output == null) {
+            throw IllegalStateException("Socket not connected")
         }
+        val payload = MessagePayload(
+            contentType = contentType,
+            content = content,
+            replyId = replyId
+        )
+        
+        val message = SocketMessage(
+            type = "MSG",
+            from = currentUserId,
+            to = to,
+            payload = payload
+        )
+        
+        val json = gson.toJson(message)
+        output?.println(json)
     }
 
-    fun sendMessage(content: String) {
+    // sendTypingStatus 也可以是 suspend, 但因为它不那么关键，我们允许它在内部 scope 中快速失败
+    fun sendTypingStatus(to: String?) {
         scope.launch {
             if (isConnected && output != null) {
                 val message = SocketMessage(
-                    type = "MSG",
+                    type = "TYPING",
                     from = currentUserId,
-                    content = content
+                    to = to
                 )
+                
                 val json = gson.toJson(message)
                 try {
                     output?.println(json)
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to send message", e)
-                    disconnect() // 发送失败可能意味着连接断开
+                    Log.e(TAG, "Failed to send typing status", e)
                 }
-            } else {
-                Log.w(TAG, "Not connected, message ignored")
             }
         }
     }

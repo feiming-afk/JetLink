@@ -53,8 +53,9 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
     
-    // ViewModel
+    // ViewModel & Lifecycle
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.lifecycle.process)
 
     // Room Database
     implementation(libs.androidx.room.runtime)
@@ -66,6 +67,9 @@ dependencies {
 
     // Gson
     implementation(libs.google.gson)
+
+    // Coil for Image Loading
+    implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

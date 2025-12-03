@@ -14,7 +14,7 @@ import java.net.Socket
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * 简单的 Socket 服务端
+ * 简单的 Socket 服务端 (V2.0 Updated)
  * 用于接收客户端连接，并广播消息给所有连接的客户端
  */
 object SocketServer {
@@ -68,12 +68,17 @@ object SocketServer {
             val input = BufferedReader(InputStreamReader(socket.getInputStream()))
             while (isRunning && !socket.isClosed) {
                 val json = input.readLine() ?: break
-                Log.d(TAG, "Received: $json")
                 
-                // 解析消息以验证格式（这里简单解析，主要为了转发）
+                // 对于 Base64 图片，日志可能太长，做个截断处理
+                val logMsg = if (json.length > 200) json.substring(0, 200) + "..." else json
+                Log.d(TAG, "Received: $logMsg")
+                
+                // 解析消息以验证格式
                 try {
                     val message = gson.fromJson(json, SocketMessage::class.java)
                     if (message != null) {
+                        // V2.0 更新：如果是广播消息 (或者 to 为 null/ALL)，则转发给所有人
+                        // 这里为了简化，暂时还是全量广播，客户端自己过滤
                         broadcastMessage(json, socket)
                     }
                 } catch (e: Exception) {
@@ -94,8 +99,7 @@ object SocketServer {
 
     private fun broadcastMessage(messageJson: String, senderSocket: Socket?) {
         clients.forEach { client ->
-            // 这里为了简化逻辑，也回传给发送者，实际应用中可能不需要
-            // 或者由客户端根据 from 字段判断是否是自己
+            // 转发给所有客户端 (包括发送者自己，客户端会根据 ID 过滤或去重)
             try {
                 if (!client.isClosed) {
                     val output = PrintWriter(client.getOutputStream(), true)

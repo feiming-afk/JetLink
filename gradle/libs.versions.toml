@@ -13,6 +13,8 @@ ksp = "2.0.21-1.0.27"
 gson = "2.10.1"
 coroutines = "1.9.0"
 navigationCompose = "2.8.0"
+coil = "2.7.0"
+lifecycleProcess = "2.8.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -36,6 +38,8 @@ androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = 
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 google-gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "lifecycleProcess" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

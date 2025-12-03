@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,14 +36,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.jetlink.data.entity.MessageEntity
 import com.example.jetlink.ui.theme.JetLinkTheme
 
 @Composable
 fun ChatInputBar(
     onSendMessage: (String) -> Unit,
+    onAddImageClick: () -> Unit,
+    onTyping: () -> Unit,
+    onCancelReply: () -> Unit,
+    replyingMessage: MessageEntity? = null,
     modifier: Modifier = Modifier
 ) {
     var text by remember { mutableStateOf("") }
@@ -60,10 +68,47 @@ fun ChatInputBar(
         tonalElevation = 2.dp
     ) {
         Column {
+            // 引用回复提示条
+            if (replyingMessage != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "回复: ${replyingMessage.senderId}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = if (replyingMessage.msgType == 1) "[图片]" else replyingMessage.content,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    IconButton(onClick = onCancelReply) {
+                        Icon(Icons.Default.Close, contentDescription = "取消回复")
+                    }
+                }
+            }
+
             Row(
                 modifier = Modifier.padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // 加号按钮 (选择图片)
+                IconButton(onClick = onAddImageClick) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "添加图片",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
                 // 表情按钮
                 IconButton(
                     onClick = { showEmojiPicker = !showEmojiPicker }
@@ -77,7 +122,10 @@ fun ChatInputBar(
 
                 TextField(
                     value = text,
-                    onValueChange = { text = it },
+                    onValueChange = { 
+                        text = it 
+                        onTyping() // 触发正在输入状态
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .padding(horizontal = 4.dp),
@@ -146,6 +194,11 @@ fun ChatInputBar(
 @Composable
 fun ChatInputBarPreview() {
     JetLinkTheme {
-        ChatInputBar(onSendMessage = {})
+        ChatInputBar(
+            onSendMessage = {},
+            onAddImageClick = {},
+            onTyping = {},
+            onCancelReply = {}
+        )
     }
 }

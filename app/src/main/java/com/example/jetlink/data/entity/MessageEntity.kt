@@ -8,8 +8,9 @@ data class MessageEntity(
     @PrimaryKey(autoGenerate = true) val msgId: Long = 0,
     val sessionId: String,
     val senderId: String,
-    val content: String,
-    val msgType: String, // TEXT or IMAGE
+    val msgType: Int, // 0=TEXT, 1=IMAGE, 2=SYSTEM
+    val content: String, // Text or Local Uri String or Base64
+    val replyToId: Long? = null,
     val timestamp: Long,
     val isRead: Boolean = false
 )

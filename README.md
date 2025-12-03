@@ -1,127 +1,70 @@
-# JetLink - 局域网聊天应用 (Android Engineer Camp Assignment)
+# JetLink V2.0
+![JetLink Logo](https://img.shields.io/badge/JetLink-v2.0-blue.svg) 
+![Platform](https://img.shields.io/badge/Platform-Android-green.svg) 
+![Compose](https://img.shields.io/badge/Compose-1.6.5-blue.svg)
 
-JetLink 是一个基于 Modern Android Development (MAD) 标准开发的 Android 局域网聊天应用。它展示了如何使用最新的 Jetpack 组件构建一个具备本地存储和网络通信功能的即时通讯软件。
+**JetLink** 是一个基于 Jetpack Compose 和原生 Java Socket 构建的现代化、高性能的局域网（LAN）即时聊天应用。它旨在提供一个流畅、美观且功能丰富的聊天体验，展示了在 Android 平台上构建响应式、单向数据流应用的最新实践。
 
-## 🛠 技术栈 (Tech Stack)
+---
 
-本项目严格遵守 **MVVM** 架构，并使用以下技术：
+## ✨ 核心功能 (Features)
 
-*   **语言**: Kotlin
-*   **UI 框架**: Jetpack Compose (Material3)
-*   **架构模式**: MVVM (Model-View-ViewModel)
-*   **本地数据库**: Android Jetpack Room (配合 KSP)
-*   **异步处理**: Kotlin Coroutines & Flow
-*   **网络通信**: Java Socket (TCP)
-*   **导航**: Navigation Compose
-*   **序列化**: Gson
-*   **依赖注入**: 手动注入 (Manual DI)
+JetLink V2.0 带来了全面的功能升级，提供了一个完整的 IM 体验：
 
-## 🚀 如何运行 (How to Run)
+-   **富媒体消息**:
+    -   **文本与图片**：支持发送纯文本消息和图片。图片在发送前会自动进行压缩并使用 Base64 编码，确保在局域网内的传输效率。
+-   **高级交互**:
+    -   **引用回复**：长按消息即可引用，被引用的消息会在新消息气泡中以摘要形式展示。
+    -   **长按菜单**：提供“复制”、“回复”、“删除”等上下文操作。
+-   **实时状态同步**:
+    -   **正在输入提示**：当对方正在输入时，聊天界面顶部会实时显示“对方正在输入...”的动画提示，增强了聊天的临场感。
+-   **现代化 UI/UX**:
+    -   **Material 3 设计**：完全遵循 Material Design 3 规范，提供干净、现代的视觉体验。
+    -   **深色模式 & 动态主题**：无缝适配系统深色模式，并在支持的设备上启用动态取色，与壁纸融为一体。
+-   **系统级集成**:
+    -   **后台通知**：当应用在后台运行时，新消息会以系统通知的形式弹出，确保用户不会错过任何信息。
+    -   **错误反馈**：在图片发送失败或网络连接中断时，界面底部会弹出 Snackbar 给予明确的错误提示。
 
-1.  **环境要求**:
-    *   Android Studio Ladybug 或更新版本
-    *   JDK 11+
-    *   CompileSdk: 36
-    *   MinSdk: 24
+---
 
-2.  **运行步骤**:
-    *   将项目克隆到本地并使用 Android Studio 打开。
-    *   等待 Gradle Sync 完成。
-    *   连接 Android 模拟器或真机。
-    *   点击 **Run** 按钮。
+## 🛠️ 技术栈 (Tech Stack)
 
-3.  **通信测试说明**:
-    *   **单机/模拟器测试**: App 启动时会在本地开启一个端口为 `8888` 的 Socket Server。默认的 Client 逻辑会尝试连接 `10.0.2.2` (模拟器访问宿主机的 Localhost)。您可以在模拟器上自发自收，或者开启多个模拟器实例（需配置端口转发）。
-    *   **局域网真机测试**:
-        1.  确保两台手机连接到同一个 WiFi。
-        2.  修改 `SocketClientManager.kt` 中的 `SERVER_IP` 为其中一台手机（作为 Server）的局域网 IP 地址。
-        3.  在该手机上启动 App（它会作为 Server 监听）。
-        4.  在另一台手机上启动 App（它作为 Client 连接）。
+项目采用了 Android 官方推荐的现代化技术栈：
 
-## 📐 设计思路文档
+-   **核心语言**: [Kotlin](https://kotlinlang.org/)
+-   **UI 框架**: [Jetpack Compose](https://developer.android.com/jetpack/compose) - 用于构建声明式、响应式的用户界面。
+-   **架构模式**: **MVVM** + **Repository** Pattern。
+-   **数据库**: [Room Database](https://developer.android.com/training/data-storage/room) - 用于本地消息和用户数据的持久化存储。
+-   **异步处理**: [Kotlin Coroutines & Flow](https://kotlinlang.org/docs/coroutines-guide.html) - 全面用于处理网络、数据库和 UI 状态更新。
+-   **网络通信**: **Java Socket** (TCP) - 实现底层的点对点实时通信。
+-   **图片加载**: [Coil (Compose)](https://coil-kt.github.io/coil/) - 高性能的图片加载库，用于在聊天界面流畅地显示和缓存图片。
+-   **生命周期管理**: `AndroidViewModel`, `lifecycle-process`。
 
-### 1. MVVM 架构应用
+---
 
-本项目采用了经典的 MVVM 分层架构，实现了 UI 与数据逻辑的解耦：
+## 🚀 如何运行 (Getting Started)
 
-*   **Model (Data Layer)**:
-    *   **Entity**: 定义了 `UserEntity` 和 `MessageEntity`，映射到 Room 数据库表。
-    *   **DAO**: `ChatDao` 提供了对 SQLite 数据库的读写接口，返回 `Flow` 以支持响应式数据流。
-    *   **Repository**: `ChatRepository` 是单一数据源（SSOT）。它封装了本地数据库 (`ChatDao`) 和网络层 (`SocketClientManager`)。
-        *   *读取*: UI 观察 Repository 提供的 Flow，数据来源是本地数据库（网络消息收到后先存库，库的变动自动通知 UI）。
-        *   *写入*: 发送消息时，Repository 先将消息存入本地，同时通过 Socket 发送给服务端。
-*   **ViewModel**:
-    *   `ChatViewModel`: 持有 UI 状态 (`StateFlow<List<MessageEntity>>`)。它负责处理业务逻辑（如发送消息），并将 UI 事件转换为数据层操作。它不持有任何 View 的引用，保证了生命周期的安全性。
-*   **View (UI Layer)**:
-    *   使用 **Jetpack Compose** 构建声明式 UI。
-    *   `MainActivity`: 负责导航图 (`NavHost`) 的配置和依赖注入。
-    *   `ChatScreen` & `ConversationListScreen`: 纯粹的 UI 组件，根据 ViewModel 暴露的状态进行渲染。
+#### 1. 前置条件
 
-### 2. Socket 通信协议
+JetLink 是一个局域网应用，其核心依赖于一个 Java Socket 服务端。
 
-为了简化开发，项目自定义了一个轻量级的 JSON 通信协议。
+-   **服务端**: 应用内置了一个简易的 `SocketServer`。当第一个用户启动 App 时，它会自动在 `8888` 端口开启一个 TCP 服务端。
+-   **网络环境**: 为了让设备间能够互相通信，请确保**所有测试设备（模拟器或真机）连接到同一个局域网（Wi-Fi）**。
 
-**消息格式**:
-```json
-{
-  "type": "MSG",
-  "from": "user_1234",
-  "content": "Hello World"
-}
-```
+#### 2. 客户端配置
 
-*   `type`: 消息类型，目前固定为 `MSG`，可扩展 `IMAGE` 或 `HEARTBEAT`。
-*   `from`: 发送者的唯一标识 ID (由 App 首次启动时随机生成并持久化)。
-*   `content`: 文本消息内容。
+-   **模拟器之间**: 通常无需配置，它们默认在同一内部网络中 (`10.0.2.2` 指向宿主机)。
+-   **真机之间**:
+    1.  找到作为服务端的设备（第一个启动 App 的设备）的局域网 IP 地址（例如 `192.168.1.10`）。
+    2.  在其他客户端设备的代码中，修改 `app/src/main/java/com/example/jetlink/socket/SocketClientManager.kt` 文件：
+        ```kotlin
+        private const val SERVER_IP = "192.168.1.10" // 替换为你的服务端 IP
+        ```
+    3.  重新编译并安装应用。
 
-**通信流程**:
-1.  **连接**: Client 连接 Server 的 8888 端口。
-2.  **发送**: Client 将对象序列化为 JSON 字符串发送。
-3.  **转发**: Server 收到消息后，将其广播给所有当前连接的 Client。
-4.  **接收**: Client 收到 JSON，反序列化并存入本地 Room 数据库，UI 通过 Flow 自动更新。
+#### 3. Android 权限
 
-## 📂 代码结构树
+为了完整体验所有功能，请确保授予应用以下权限：
 
-```text
-com.example.jetlink
-├── data                 // 数据层
-│   ├── dao              // Room DAO 接口
-│   │   └── ChatDao.kt
-│   ├── entity           // 数据库实体类
-│   │   ├── MessageEntity.kt
-│   │   └── UserEntity.kt
-│   ├── repository       // 数据仓库
-│   │   └── ChatRepository.kt
-│   └── AppDatabase.kt   // Room 数据库入口
-├── model                // 业务/网络模型
-│   └── SocketMessage.kt
-├── socket               // 网络层
-│   ├── SocketClientManager.kt // 客户端逻辑 (连接/收发)
-│   └── SocketServer.kt        // 服务端逻辑 (监听/广播)
-├── ui                   // UI 层
-│   ├── components       // 通用 UI 组件
-│   │   ├── ChatBubble.kt      // 聊天气泡
-│   │   └── ChatInputBar.kt    // 输入栏(含表情)
-│   ├── screens          // 页面
-│   │   ├── ChatScreen.kt             // 聊天详情页
-│   │   └── ConversationListScreen.kt // 会话列表页
-│   ├── theme            // Compose 主题
-│   │   └── ...
-│   └── viewmodel        // ViewModel
-│       └── ChatViewModel.kt
-└── MainActivity.kt      // 程序入口 / 导航配置
-```
-
-## 🔮 后期优化思路 (Future Improvements)
-
-1.  **网络自动发现 (Service Discovery)**:
-    *   目前 IP 是硬编码的。可以使用 UDP 广播 (NSD) 来自动发现局域网内的 Server IP，实现真正的零配置连接。
-2.  **多媒体消息**:
-    *   扩展 `MessageEntity` 和 Socket 协议，支持图片、语音消息的发送（需处理 Base64 编码或文件流传输）。
-3.  **消息状态回执**:
-    *   引入 `ACK` 机制，实现消息的“发送中”、“已发送”、“已读”状态管理。
-4.  **依赖注入框架**:
-    *   引入 **Hilt** 来管理依赖，替换目前的 `Manual DI`，使代码更易于测试和维护。
-5.  **UI 美化**:
-    *   添加头像选择功能。
-    *   优化转场动画和夜间模式适配。
+-   **通知 (POST_NOTIFICATIONS)**: 在 Android 13+ 设备上，首次启动时会请求此权限，用于在后台接收消息通知。
+-   **相册读取**: 发送图片时，系统会自动弹出相册选择器，通常无需手动请求权限。
